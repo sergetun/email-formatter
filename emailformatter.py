@@ -1,18 +1,25 @@
 from selenium import webdriver
-from selenium.webdriver.firefox.service import Service
-from selenium.webdriver.firefox.options import Options
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
-service = Service(r"C:\Users\serge\Downloads\geckodriver\geckodriver.exe")
+# adjust the path to your ChromeDriver executable
 
 options = Options()
-options.profile = r"C:\Users\serge\AppData\Roaming\Mozilla\Firefox\Profiles\wgtk7pnl.default-release"
+# you can add Chrome-specific options if needed, for example:
+# options.add_argument("--user-data-dir=C:\Users\serge\AppData\Local\Google\Chrome\User Data")
 
-driver = webdriver.Firefox(service=service, options=options)
+# initialize the Chrome driver
+driver = webdriver.Chrome(options=options)
 
-driver.get("https://www.virginmusic.io/release?recordId=recJ5GdqzsKvmrfH2")
+# ask the user for the target URL to navigate to
+url = input("Enter the URL for selenium to open: ")
+if not url.strip():
+    raise ValueError("No URL provided")
+
+driver.get(url)
 
 wait = WebDriverWait(driver, 20)
 
@@ -62,11 +69,12 @@ print(projectDescription)
 print("     ")
 print("Marketing")
 print(additionalMarketingPlans) 
-# print("     ")
-# print("Details:")
-# print("UPC: " + upc)
-# print(listeningLink)
-# print(pressShots)
+print("     ")
+print("Details:")
+print("UPC: ")
+print("Listening link")
+print("Press shots")
+print("     ")
 
 print("Apple")
 print("     ")
@@ -76,11 +84,13 @@ print(projectDescription)
 print("     ")
 print("Marketing")
 print(additionalMarketingPlans) 
-# print("     ")
-# print("Details:")
-# print("UPC: " + upc)
-# print(listeningLink)
-# print(pressShots)
+print("     ")
+print("Details:")
+print("UPC: ")
+print("Apple ID: ")
+print("Listening link")
+print("Press shots")
+print("     ")
 
 print("Spotify")
 print("     ")
@@ -90,8 +100,9 @@ print(projectDescription)
 print("     ")
 print("Marketing")
 print(additionalMarketingPlans) 
-# print("     ")
-# print("Details:")
-# print("UPC: " + upc)
-# print(listeningLink)
-# print(pressShots)
+print("     ")
+print("Details:")
+print("UPC: ")
+print("URI: ")
+print("Listening link")
+print("Press shots")
