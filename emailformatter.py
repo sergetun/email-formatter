@@ -1,108 +1,107 @@
 from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
-# adjust the path to your ChromeDriver executable
 
-options = Options()
-# you can add Chrome-specific options if needed, for example:
-# options.add_argument("--user-data-dir=C:\Users\serge\AppData\Local\Google\Chrome\User Data")
+# ── Constants ────────────────────────────────────────────────────────────────
 
-# initialize the Chrome driver
-driver = webdriver.Chrome(options=options)
+WAIT_TIMEOUT = 20
 
-# ask the user for the target URL to navigate to
-url = input("Enter the URL for selenium to open: ")
-if not url.strip():
-    raise ValueError("No URL provided")
+XPATHS = {
+    "project_description": "//p[.//strong[contains(text(),'PROJECT DESCRIPTION')]/following-sibling::text()[1]]",
+    "additional_marketing": "//p[.//strong[contains(text(),'ADDITIONAL MARKETING PLANS')]]",
+    "artist_name":          "//h1/span",
+    "h1":                   "//h1",
+}
 
-driver.get(url)
 
-wait = WebDriverWait(driver, 20)
+# ── Driver setup ─────────────────────────────────────────────────────────────
 
-projectDescription = wait.until(
-    EC.presence_of_element_located(
-        (By.XPATH, "//p[.//strong[contains(text(),'PROJECT DESCRIPTION')]/following-sibling::text()[1]]")
-        )
-    ).text 
+def create_driver() -> webdriver.Chrome:
+    options = Options()
+    # options.add_experimental_option("debuggerAddress", "127.0.0.1:9222")
+    # options.add_argument(r"--user-data-dir=C:\Users\Serge\AppData\Local\Google\Chrome\User Data")
+    # options.add_argument("--profile-directory=Default")
+    return webdriver.Chrome(options=options)
 
-artistName = driver.find_element(
-    By.XPATH, 
-    "//h1/span"
-).text.split("\n")[0]
 
-h1 = driver.find_element(By.XPATH, "//h1")
-songName = h1.text.split("\n")[0]
+# ── Data extraction ───────────────────────────────────────────────────────────
 
-span = driver.find_element(By.XPATH, "//h1/span")
-dateOfRelease = span.text.split("\n")[1]
+def extract_data(driver: webdriver.Chrome, wait: WebDriverWait) -> dict:
+    h1_text    = driver.find_element(By.XPATH, XPATHS["h1"]).text.split("\n")
+    span_text  = driver.find_element(By.XPATH, XPATHS["artist_name"]).text.split("\n")
 
-additionalMarketingPlans = wait.until(
-    EC.presence_of_element_located(
-        (By.XPATH, "//p[.//strong[contains(text(),'ADDITIONAL MARKETING PLANS')]]")
-        )
+    song_name   = h1_text[0]
+    artist_name = span_text[0]
+    date        = span_text[1] if len(span_text) > 1 else "N/A"
+
+    project_description = wait.until(
+        EC.presence_of_element_located((By.XPATH, XPATHS["project_description"]))
     ).text
 
-driver.execute_script("window.location.hash = 'internal-details';") # navigate to internal details section to load the content
+    additional_marketing = wait.until(
+        EC.presence_of_element_located((By.XPATH, XPATHS["additional_marketing"]))
+    ).text
+
+    driver.execute_script("window.location.hash = 'internal-details';")
+
+    return {
+        "artist_name":           artist_name,
+        "song_name":             song_name,
+        "date_of_release":       date,
+        "project_description":   project_description,
+        "additional_marketing":  additional_marketing,
+    }
 
 
-# p = wait.until(
-#     EC.presence_of_element_located(
-#         (
-#             By.XPATH, "//p[contains(text(),'Delivered')]"
-#             )
-#         )
-#     )
+# ── Output formatting ─────────────────────────────────────────────────────────
 
-# text = p.text
-# upc = text.split(" - ")[1]
-# print(upc)
+def print_section(platform: str, data: dict, extra_fields: list[str]) -> None:
+    """Print a formatted pitch block for a given platform."""
+    sep = " "
 
-print("Other")
-print("     ")
-print(artistName + " - " + songName) 
-print(dateOfRelease) 
-print(projectDescription) 
-print("     ")
-print("Marketing")
-print(additionalMarketingPlans) 
-print("     ")
-print("Details:")
-print("UPC: ")
-print("Listening link")
-print("Press shots")
-print("     ")
+    print(platform)
+    print(sep)
+    print(f"{data['artist_name']} - {data['song_name']}")
+    print(data["date_of_release"])
+    print(data["project_description"])
+    print(sep)
+    print("Marketing")
+    print(data["additional_marketing"])
+    print(sep)
+    print("Details:")
+    print(f"UPC: ")
+    for field in extra_fields:
+        print(f"{field}: ")
+    print("Listening link")
+    print("Press shots")
+    print(sep)
 
-print("Apple")
-print("     ")
-print(artistName + " - " + songName) 
-print(dateOfRelease) 
-print(projectDescription) 
-print("     ")
-print("Marketing")
-print(additionalMarketingPlans) 
-print("     ")
-print("Details:")
-print("UPC: ")
-print("Apple ID: ")
-print("Listening link")
-print("Press shots")
-print("     ")
 
-print("Spotify")
-print("     ")
-print(artistName + " - " + songName) 
-print(dateOfRelease) 
-print(projectDescription) 
-print("     ")
-print("Marketing")
-print(additionalMarketingPlans) 
-print("     ")
-print("Details:")
-print("UPC: ")
-print("URI: ")
-print("Listening link")
-print("Press shots")
+def print_all_sections(data: dict) -> None:
+    print_section("Other",   data, [])
+    print_section("Apple",   data, ["Apple ID"])
+    print_section("Spotify", data, ["URI"])
+
+
+# ── Entry point ───────────────────────────────────────────────────────────────
+
+def main() -> None:
+    url = input("Enter the URL for Selenium to open: ").strip()
+    if not url:
+        raise ValueError("No URL provided.")
+
+    driver = create_driver()
+    try:
+        driver.get(url)
+        wait   = WebDriverWait(driver, WAIT_TIMEOUT)
+        data   = extract_data(driver, wait)
+        print_all_sections(data)
+    finally:
+        driver.quit()
+
+
+if __name__ == "__main__":
+    main()
