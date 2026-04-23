@@ -119,4 +119,5 @@ When a project description contains line breaks, blank lines, or is formatted as
 ## 👤 Author
 
 Serge Thurain Bolduc Tun
+
 Internal tool — Tomorrowland Music Label
